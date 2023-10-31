@@ -1,3 +1,6 @@
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -32,5 +35,19 @@ public class CalculateFrequencies {
       }
     }
     return list;
+  }
+
+  public int[] countFrequencies(String file) {
+    int[] frequncies = new int[256];
+    try {
+      BufferedInputStream reader = new BufferedInputStream(new FileInputStream(file));
+      int character;
+      while ((character = reader.read()) != -1) {
+        frequncies[character]++;
+      }
+    } catch (Exception e) {
+      System.out.println("An error occurred with reading the file.");
+    }
+    return frequncies;
   }
 }
