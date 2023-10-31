@@ -1,73 +1,47 @@
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.PriorityQueue;
-import java.util.Scanner;
 
 public class Main {
-
-  public static String testString = "aaaaabbbbcccdde";
   public static StringBuilder inputString = new StringBuilder();
   public static StringBuilder encodedString = new StringBuilder();
-  public static BitSet huffmanCodeBit;
 
   public static void main(String[] args) throws IOException {
-    String fileName1 = "testFile.txt";
-    String fileName2 = "opg8-kompr.lyx";
-    String fileName3 = "diverse.txt";
-    String fileName4 = "diverse.lyx";
-    String fileName5 = "enwik8.txt";
 
-    String fileName = fileName5;
+    // File names for original files
+    String fileName1 = "opg8-kompr.lyx";
+    String fileName2 = "diverse.txt";
+    String fileName3 = "diverse.lyx";
+    String fileName4 = "enwik8.txt";
 
-    String zipFileName1 = "testFile7zip.txt";
-    String zipFileName2 = "opg8-kompr7zip.lyx";
-    String zipFileName3 = "diverseT7zip.txt";
-    String zipFileName4 = "diverseL7zip.lyx";
-    String zipFileName5 = "enwik87zip.txt";
+    // File names for compressed files
+    String zipFileName1 = "opg8-komprCompressed.lyx";
+    String zipFileName2 = "diverseCompressed.txt";
+    String zipFileName3 = "diverseCompressed.lyx";
+    String zipFileName4 = "enwik8Compressed.txt";
 
-    String zipFileName = zipFileName5;
-
-    /*
-    Scanner scanner = new Scanner(System.in);
-    System.out.println("Enter the path to the file you want to encode:");
-    String path = scanner.nextLine();
-    System.out.println("-----");
-     */
+    // File names for decompressed files
+    String unzipFileName1 = "opg8-komprDecompressed.lyx";
+    String unzipFileName2 = "diverseDecompressed.txt";
+    String unzipFileName3 = "diverseDecompressed.lyx";
+    String unzipFileName4 = "enwik8Decompressed.txt";
 
 
     try {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName1)));
+
       String line;
       while ((line = reader.readLine()) != null) {
         inputString.append(line);
       }
+      reader.close();
 
-      try {
-        File testFile = new File("encodedTest.txt");
-        if (testFile.createNewFile()) {
-          System.out.println("File created: " + testFile.getName());
-        } else {
-          System.out.println("File already exists.");
-        }
-      } catch (IOException e) {
-        System.out.println("An error occurred with creating the file.");
-      }
-
-      System.out.println("-----");
-      CalculateFrequencies cf = new CalculateFrequencies();
+     CalculateFrequencies cf = new CalculateFrequencies();
       cf.calcFreq(inputString.toString());
 
-//    System.out.println("Character frequencies:");
-//    for (HuffmanNode node : cf.nodes) {
-//      System.out.println(node.c + " " + node.frequency);
-//    }
-
-      System.out.println("-----");
-      System.out.println("Encoded string for characters:");
       HuffmanTree ht = new HuffmanTree(cf.nodes);
       ArrayList<HuffmanCode> huffmanCodes = new ArrayList<>();
       //ht.buildTree();
@@ -75,28 +49,28 @@ public class Main {
 
       pq.addAll(cf.nodes);
       ht.root = ht.generateTree(pq);
-      assert ht.root != null;
-      ht.printTree(ht.root, "", huffmanCodes);
-      //System.out.println("-----");
+      ht.createHuffmanCodes(ht.root, "", huffmanCodes);
       ht.encodeString(inputString.toString(), huffmanCodes);
-      //System.out.println(ht.getEncodedString());
 
+      // TODO Does not work
+      BufferedReader reader2 = new BufferedReader(new InputStreamReader(new FileInputStream(fileName1)));
       int[] freq = new int[256];
 
       int character;
-      while ((character = reader.read()) != -1) {
+      while ((character = reader2.read()) != -1) {
         char c = (char) character;
         if (c < 256) {
           freq[c]++;
         }
       }
+
       ArrayList<HuffmanNode> nodes = cf.getFreq(freq);
       ArrayList<String> word = new ArrayList<>();
-      byte[] bytes = Files.readAllBytes(Path.of(fileName));
+      byte[] bytes = Files.readAllBytes(Path.of(fileName1));
       StringBuilder str = new StringBuilder();
 
       for (byte aByte : bytes) {
-        for (HuffmanNode n1 : ht.nodes) {
+        for (HuffmanNode n1 : nodes) {
           if (aByte == n1.c) {
             str.append(n1.code);
             if (str.length() % 8 == 0) {
@@ -107,7 +81,7 @@ public class Main {
         }
       }
       word.add(str.toString());
-      OutputStream oos = new FileOutputStream(zipFileName);
+      OutputStream oos = new FileOutputStream(zipFileName1);
       BufferedOutputStream bos = new BufferedOutputStream(oos);
       DataOutputStream os = new DataOutputStream(bos);
       StringBuilder frequencies = new StringBuilder();
@@ -146,52 +120,6 @@ public class Main {
       System.out.println("Successfully wrote to the file.");
 
 
-      //System.out.println("-----");
-      //writeToFile(ht, "encodedTest.txt");
-
-      /*
-      System.out.println("-----");
-      System.out.println("Read from file:");
-      readFromFile("encodedTest.txt");
-
-
-      System.out.println("-----");
-      System.out.println("Decoded string:");
-      ht.decodeString(String.valueOf(encodedString), ht.root);
-      //System.out.println(ht.getDecodedString());
-
-      System.out.println("-----");
-      if (ht.getDecodedString().contentEquals(inputString)) {
-        System.out.println("Decoded string is equal to original string");
-      } else {
-        System.out.println("Decoded string is not equal to original string");
-      }
-      reader.close();
-       */
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void writeToFile(HuffmanTree ht, String fileName) {
-    try {
-      BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
-      writer.write(ht.getEncodedString());
-      writer.close();
-      System.out.println("Successfully wrote to the file.");
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void readFromFile(String fileName) {
-    try (BufferedReader encodeReader = new BufferedReader(new InputStreamReader(Files.newInputStream(Path.of(fileName)), StandardCharsets.UTF_8))) {
-      String encodeLine;
-      while ((encodeLine = encodeReader.readLine()) != null) {
-        encodedString.append(encodeLine);
-      }
-      encodeReader.close();
-      System.out.println("Successfully read from the file.");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
